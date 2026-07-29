@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VaultCheck — what's in your game accounts</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎮</text></svg>" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◈</span>
+    <div>
+      <h1>VaultCheck</h1>
+      <p>Your items, levels, and what it all cost</p>
+    </div>
+  </div>
+  <button id="settings-open" class="ghost-btn" type="button">Settings</button>
+</header>
+
+<nav class="games" id="games" role="tablist">
+  <button class="game" data-game="roblox" role="tab" aria-selected="true">
+    <span class="game-dot" style="--dot:#e2231a"></span>Roblox
+    <span class="game-tag good">Full inventory</span>
+  </button>
+  <button class="game" data-game="fortnite" role="tab" aria-selected="false">
+    <span class="game-dot" style="--dot:#8b5cf6"></span>Fortnite
+    <span class="game-tag good">Full locker</span>
+  </button>
+  <button class="game" data-game="apex" role="tab" aria-selected="false">
+    <span class="game-dot" style="--dot:#da292a"></span>Apex
+    <span class="game-tag ok">Stats only</span>
+  </button>
+  <button class="game" data-game="cod" role="tab" aria-selected="false">
+    <span class="game-dot" style="--dot:#6b7280"></span>Call of Duty
+    <span class="game-tag meh">Limited</span>
+  </button>
+</nav>
+
+<main>
+  <!-- ---------- Search panels ---------- -->
+  <section class="panel" id="panel-roblox">
+    <form class="lookup" data-endpoint="/api/roblox">
+      <label for="roblox-user">Roblox username</label>
+      <div class="row">
+        <input id="roblox-user" name="username" placeholder="e.g. builderman" autocomplete="off" required />
+        <button class="primary-btn" type="submit">Look up</button>
+      </div>
+      <p class="hint">Public data — no login needed. The account's inventory privacy must be set to
+        anything other than "Only me".</p>
+    </form>
+  </section>
+
+  <section class="panel hidden" id="panel-fortnite">
+    <div class="epic-flow">
+      <h2>See your real locker</h2>
+      <p class="hint">
+        You sign in on <strong>epicgames.com</strong> — Epic's own site — and it hands you a
+        one-time code. Paste it here. Your password never touches this app.
+      </p>
+      <ol class="steps">
+        <li>
+          <a id="epic-link" class="primary-btn inline" href="#" target="_blank" rel="noopener">
+            Open Epic sign-in ↗
+          </a>
+        </li>
+        <li>Sign in. You'll land on a page of raw JSON.</li>
+        <li>Copy the value next to <code>"authorizationCode"</code> and paste it below.</li>
+      </ol>
+      <form class="lookup" id="locker-form">
+        <label for="epic-code">Authorization code</label>
+        <div class="row">
+          <input id="epic-code" name="code" placeholder="32 characters, letters and numbers"
+                 autocomplete="off" spellcheck="false" required />
+          <button class="primary-btn" type="submit">Load locker</button>
+        </div>
+        <p class="hint warn">
+          Codes expire within seconds and work once. If it fails, click the link again for a fresh one.
+        </p>
+      </form>
+    </div>
+
+    <details class="fallback">
+      <summary>Or just check public stats by username</summary>
+      <form class="lookup" data-endpoint="/api/fortnite">
+        <div class="row">
+          <input name="username" placeholder="Epic display name" autocomplete="off" required />
+          <button class="ghost-btn" type="submit">Look up</button>
+        </div>
+        <p class="hint">Needs a fortnite-api.com key. Shows level and stats — not items.</p>
+      </form>
+    </details>
+  </section>
+
+  <section class="panel hidden" id="panel-apex">
+    <form class="lookup" data-endpoint="/api/apex">
+      <label for="apex-user">Apex username</label>
+      <div class="row">
+        <input id="apex-user" name="username" placeholder="Origin / EA account name" autocomplete="off" required />
+        <select name="platform" aria-label="Platform">
+          <option value="origin">PC (EA)</option>
+          <option value="psn">PlayStation</option>
+          <option value="xbl">Xbox</option>
+        </select>
+        <button class="primary-btn" type="submit">Look up</button>
+      </div>
+      <p class="hint">Respawn has no inventory API, so no app can read your skins or heirlooms.
+        You'll get account level and per-legend stats.</p>
+    </form>
+  </section>
+
+  <section class="panel hidden" id="panel-cod">
+    <form class="lookup" data-endpoint="/api/cod">
+      <label for="cod-user">Activision ID</label>
+      <div class="row">
+        <input id="cod-user" name="username" placeholder="Name#1234567" autocomplete="off" required />
+        <select name="platform" aria-label="Platform">
+          <option value="atvi">Activision ID</option>
+          <option value="battlenet">Battle.net</option>
+          <option value="psn">PlayStation</option>
+          <option value="xbl">Xbox</option>
+        </select>
+        <button class="primary-btn" type="submit">Look up</button>
+      </div>
+      <p class="hint">Activision closed its public account API, so this is Warzone stats only,
+        and only while your profile is public.</p>
+    </form>
+  </section>
+
+  <!-- ---------- Results ---------- -->
+  <div id="status" class="status hidden" role="status"></div>
+  <section id="results" class="results hidden"></section>
+</main>
+
+<!-- ---------- Settings ---------- -->
+<div class="modal hidden" id="settings">
+  <div class="modal-card">
+    <header>
+      <h2>Settings</h2>
+      <button id="settings-close" class="icon-btn" type="button" aria-label="Close">×</button>
+    </header>
+
+    <form id="settings-form">
+      <label for="tracker-key">Tracker.gg API key</label>
+      <input id="tracker-key" name="trackerApiKey" placeholder="Paste key" autocomplete="off" />
+      <p class="hint">
+        Unlocks Apex and Call of Duty. Free at
+        <a href="https://tracker.gg/developers" target="_blank" rel="noopener">tracker.gg/developers</a> —
+        register an app, and the key appears on your dashboard.
+      </p>
+
+      <label for="fortnite-key">fortnite-api.com key</label>
+      <input id="fortnite-key" name="fortniteApiKey" placeholder="Paste key" autocomplete="off" />
+      <p class="hint">
+        Only needed for Fortnite <em>username</em> lookups. Free at
+        <a href="https://dash.fortnite-api.com/" target="_blank" rel="noopener">dash.fortnite-api.com</a>.
+        The Epic sign-in works without it.
+      </p>
+
+      <div class="modal-actions">
+        <span id="settings-msg" class="hint"></span>
+        <button class="primary-btn" type="submit">Save</button>
+      </div>
+    </form>
+
+    <p class="hint fineprint">
+      Keys are stored in <code>data/settings.json</code> on this machine and are never sent to
+      the browser after saving.
+    </p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
