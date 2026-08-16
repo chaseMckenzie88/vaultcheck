@@ -1,6 +1,7 @@
 {
   "name": "vaultcheck",
   "version": "1.0.0",
+  "author": "Chase McKenzie",
   "description": "Look up your game accounts across Roblox, Fortnite, Apex Legends and Call of Duty — items, account level, and estimated worth. No passwords, ever.",
   "main": "server.js",
   "type": "module",
